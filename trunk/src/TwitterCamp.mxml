@@ -7,7 +7,7 @@
 					  backgroundColor="#FFFFFF"
 					  backgroundImage=""
 					  showStatusBar="false"
-					  verticalScrollPolicy="off" horizontalScrollPolicy="off" viewSourceURL="srcview/index.html">
+					  verticalScrollPolicy="off" horizontalScrollPolicy="off">
 	<!--
 	Copyright (c) 2007 Daniel Dura
 	
