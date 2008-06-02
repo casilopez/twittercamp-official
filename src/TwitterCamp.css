@@ -1,0 +1,27 @@
+/* CSS file */
+
+@font-face
+{
+    src: url("com/adobe/twittercamp/assets/fonts/ArialRoundedMTBold.swf");
+    fontFamily: "Arial Rounded MT Bold";
+    fontWeight: bold;
+}
+
+WindowedApplication, Label, Button, TextInput
+{
+	paddingTop: 1px;
+	fontWeight: bold;
+	font-family: "Arial Rounded MT Bold";
+    color: #333333;
+}
+
+.panelCanvas
+{
+	backgroundColor: #FFFFFF;
+	backgroundAlpha: 0.9;
+	cornerRadius: 10;
+	borderStyle: solid;
+	borderThickness: 0;
+	dropShadowEnabled: true;
+	dropShadowColor: #333333;
+}

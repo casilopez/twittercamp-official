@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml"
+					  xmlns:business="com.adobe.twittercamp.business.*"
+					  layout="absolute"
+					  creationComplete="handle_creationComplete(event)"
+					  xmlns:views="com.adobe.twittercamp.views.*"
+					  backgroundColor="#FFFFFF"
+					  backgroundImage=""
+					  showStatusBar="false"
+					  verticalScrollPolicy="off" horizontalScrollPolicy="off" viewSourceURL="srcview/index.html">
+	<!--
+	Copyright (c) 2007 Daniel Dura
+	
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+	
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+	
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+	-->					  
+	<mx:Style source="TwitterCamp.css" />
+	
+	<mx:Script>
+		<![CDATA[
+			import com.adobe.services.twitter.TwitterFriendsTimeline;
+			import com.adobe.twittercamp.utils.Random;
+			import com.adobe.twittercamp.assets.flash.FlashAssets;
+			import mx.events.IndexChangedEvent;
+			import mx.containers.GridItem;
+			import com.adobe.services.twitter.TwitterStatus;
+			import com.adobe.twittercamp.views.StatusBubble;
+			import com.adobe.services.twitter.events.StatusUpdateEvent;
+			import mx.events.FlexEvent;
+			import com.adobe.twittercamp.models.TwitterCampModel;
+			import com.adobe.services.twitter.requests.TwitterFriendsTimelineRequest;
+			import com.adobe.services.twitter.TwitterCommandLoader;
+			import com.adobe.services.twitter.Twitter;
+			
+			// This setting makes it so that only tweets that are directed at the user
+			// who signed in show up. For example, if I signed in as 'ddura', then only
+			// tweets that have @ddura will appear in the app.
+			private static var onlyShowDirectedTweets:Boolean = false;
+			
+			private var twitter:Twitter;
+			private var userTimeline:TwitterFriendsTimeline;
+			
+			private function handle_creationComplete( event:FlexEvent ):void
+			{
+				systemManager.stage.stageWidth = 1365;
+				systemManager.stage.stageHeight = 768;
+				systemManager.stage.nativeWindow.x = 10;
+				systemManager.stage.nativeWindow.y = 10;
+				
+				twitter = TwitterCampModel.getInstance().twitter;
+				
+				initializeKeyListeners();
+			}
+			
+			private function initializeKeyListeners():void
+			{
+				systemManager.stage.addEventListener( KeyboardEvent.KEY_DOWN, handle_keyDown );
+			}
+			
+			private function handle_keyDown( event:KeyboardEvent ):void
+			{
+				if( ( event.charCode == String("`").charCodeAt() && event.ctrlKey ) ||
+					event.charCode == String("C").charCodeAt() )
+					configurationPanel.visible = true;
+			}
+			
+			private function login():void
+			{
+//				TwitterCampModel.getInstance().timelineUsername = loginView.timelineUsername;
+				TwitterCampModel.getInstance().twitter.login( loginView.username, loginView.password );				
+				
+				var timelineUsername:String = TwitterCampModel.getInstance().timelineUsername;
+				userTimeline = ( timelineUsername ) ? new TwitterFriendsTimeline( twitter, timelineUsername ) : twitter.friendsTimeline;
+				userTimeline.autoUpdateInterval = 1800000;
+				userTimeline.autoUpdate = true;
+				userTimeline.addEventListener( StatusUpdateEvent.FRIEND_STATUS_UPDATE, handle_statusUpdate );
+			}
+			
+			private function handle_statusUpdate( event:StatusUpdateEvent ):void
+			{
+				if( !onlyShowDirectedTweets || 
+					event.status.user.screenName.toLowerCase() == twitter.username.toLowerCase() ||
+					event.status.text.toLowerCase().indexOf( "@" + twitter.username.toLowerCase() ) >= 0 )
+					addStatusToQueue( event.status );
+			}
+			
+			private function addStatusToQueue( status:TwitterStatus ):void
+			{
+				bubbleGrid.addStatus( status );
+			}
+			
+			public function toggleFullScreen():void
+			{
+				systemManager.stage.displayState = ( systemManager.stage.displayState == StageDisplayState.FULL_SCREEN ) ? 
+													 StageDisplayState.NORMAL : 
+													 StageDisplayState.FULL_SCREEN;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Canvas left="0" right="0" top="0" bottom="{TwitterCampModel.getInstance().footerHeight}" backgroundColor="{TwitterCampModel.getInstance().backgroundColor}">
+		<mx:SWFLoader source="{TwitterCampModel.getInstance().backgroundImageUrl}" doubleClickEnabled="true"  left="0" right="0" top="0" bottom="0" scaleContent="true" maintainAspectRatio="false"/>
+		<mx:SWFLoader source="{TwitterCampModel.getInstance().backgroundLogoUrl}" verticalCenter="0" horizontalCenter="0" alpha="0.2" />
+		<views:BubbleGrid id="bubbleGrid" left="0" right="0" top="0" bottom="0"/>
+		<views:Login id="loginView" visible="{!TwitterCampModel.getInstance().twitter.connected}" login="login()" verticalCenter="0" horizontalCenter="0" height="150" />
+		<views:Configuration id="configurationPanel" width="400" height="400" visible="false" verticalCenter="0" horizontalCenter="0" />
+	</mx:Canvas>
+	<mx:Canvas height="{TwitterCampModel.getInstance().footerHeight}" bottom="0" left="0" right="0">
+		<mx:Image source="{TwitterCampModel.getInstance().footerLogoUrl}" doubleClickEnabled="true" doubleClick="toggleFullScreen()" verticalCenter="-10" right="20"/>
+		<mx:Text x="20" y="10" verticalCenter="-10" width="551" fontSize="22" text="{TwitterCampModel.getInstance().footerMessage}" />
+		<mx:Label text="TwitterCamp Developed by Daniel Dura - http://www.danieldura.com/twittercamp/" color="#666666"  horizontalCenter="0" bottom="5"/>
+	</mx:Canvas>
+</mx:WindowedApplication>
