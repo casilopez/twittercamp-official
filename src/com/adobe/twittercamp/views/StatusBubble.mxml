@@ -131,8 +131,7 @@
 	<controls:SuperImage source="{this.twitterStatus.user.profileImageUrl}"
 						 width="36" height="36" bottom="9" left="29"
 						 borderStyle="solid" borderThickness="2" borderColor="#FFFFFF"/>
-	<mx:SWFLoader right="15" bottom="70" alpha="0.3" visible="{this.twitterStatus.user.screenName.toLowerCase() == TwitterCampModel.getInstance().twitter.username}"
-				  source="{TwitterCampModel.getInstance().bubbleLogoUrl}"/>
+	<mx:SWFLoader right="15" bottom="70" alpha="0.3" source="{TwitterCampModel.getInstance().bubbleLogoUrl}"/>
 	<mx:Label x="72" y="126" text="{this.twitterStatus.user.name}" color="#FFFFFF" width="167" fontSize="14"/>
 	<mx:Label id="relativeTime" x="72" y="142" color="#FFFFFF" width="167" fontSize="12"/>
 	

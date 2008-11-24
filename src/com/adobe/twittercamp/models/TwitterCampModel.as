@@ -22,11 +22,8 @@ THE SOFTWARE.
 
 package com.adobe.twittercamp.models
 {
-	import com.adobe.services.twitter.Twitter;
-	
-	import flash.events.Event;
-	import flash.net.URLLoader;
-	import flash.net.URLRequest;
+	import flash.data.EncryptedLocalStore;
+	import flash.utils.ByteArray;
 	
 	[Bindable]
 	public class TwitterCampModel
@@ -49,26 +46,35 @@ package com.adobe.twittercamp.models
 	   public static const DEFAULT_BUBBLE_LOGO:String = "skins/bubble_logo.png";
 	   public static const DEFAULT_FOOTER_LOGO:String = "skins/banner_logo.png";
 	   public static const DEFAULT_FOOTER_HEIGHT:Number = 168;
+	   public static const DEFAULT_FOOTER_MESSAGE:String = "To see your message on this screen, create an account at Twitter.com, and add @onairbustour to your message.";	   
+	   public static const DEFAULT_SEARCH_TERMS:String = "@onairbustour OR from:onairbustour";
 	   
-	   public var twitter:Twitter = new Twitter();
-	   public var timelineUsername:String;
-	   public var config:XML;
-	   
+	   public var searchTerms:String = DEFAULT_SEARCH_TERMS;
 	   public var backgroundLogoUrl:String = DEFAULT_BACKGROUND_LOGO;
 	   public var backgroundColor:Number = DEFAULT_BACKGROUND_COLOR;
 	   public var backgroundImageUrl:String = DEFAULT_BACKGROUND_IMAGE;
 	   public var footerLogoUrl:String = DEFAULT_FOOTER_LOGO;
 	   public var bubbleLogoUrl:String = DEFAULT_BUBBLE_LOGO;
-	   public var footerMessage:String;
+	   public var footerMessage:String = DEFAULT_FOOTER_MESSAGE;
 	   public var footerHeight:Number = DEFAULT_FOOTER_HEIGHT;
+	   public var useCustomSkin:Boolean = false;
+	   
+	   public var customSkin:Object = {
+	   			backgroundLogoUrl : DEFAULT_BACKGROUND_LOGO,
+				backgroundColor : DEFAULT_BACKGROUND_COLOR,
+				backgroundImageUrl : DEFAULT_BACKGROUND_IMAGE,
+				footerLogoUrl : DEFAULT_FOOTER_LOGO,
+				bubbleLogoUrl : DEFAULT_BUBBLE_LOGO,
+				footerHeight : DEFAULT_FOOTER_HEIGHT,
+				footerMessage : DEFAULT_FOOTER_MESSAGE		
+	   }
 	   
 	   public function TwitterCampModel()
 	   {
-	   		loadConfig();
+			retrieveModel();	   	
 	   }
 		
-		
-		public function resetSkins():void
+		public function setDefaultSkin():void
 		{
 			backgroundLogoUrl = DEFAULT_BACKGROUND_LOGO;
 			backgroundColor = DEFAULT_BACKGROUND_COLOR;
@@ -76,20 +82,74 @@ package com.adobe.twittercamp.models
 			footerLogoUrl = DEFAULT_FOOTER_LOGO;
 			bubbleLogoUrl = DEFAULT_BUBBLE_LOGO;
 			footerHeight = DEFAULT_FOOTER_HEIGHT;
-			footerMessage = config.message;			
+			footerMessage = DEFAULT_FOOTER_MESSAGE;	
 		}
 		
-		public function loadConfig():void
+		public function setCustomSkin():void
 		{
-			var loader:URLLoader = new URLLoader();
-				loader.addEventListener( Event.COMPLETE, handle_loadComplete );
-				loader.load( new URLRequest( "config.xml" ) );
-		}	   
+			backgroundLogoUrl = customSkin.backgroundLogoUrl;
+			backgroundColor = customSkin.backgroundColor;
+			backgroundImageUrl = customSkin.backgroundImageUrl;
+			footerLogoUrl = customSkin.footerLogoUrl;
+			bubbleLogoUrl = customSkin.bubbleLogoUrl;
+			footerHeight = customSkin.footerHeight;
+			footerMessage = customSkin.footerMessage;				
+		}
 		
-		private function handle_loadComplete( event:Event ):void
+		public function flushModel():void
 		{
-			config = new XML( URLLoader( event.target ).data );
-			footerMessage = config.message;
+			if( useCustomSkin )
+			{
+				customSkin.backgroundLogoUrl = backgroundLogoUrl;
+				customSkin.backgroundColor = backgroundColor;
+				customSkin.backgroundImageUrl = backgroundImageUrl;
+				customSkin.footerLogoUrl = footerLogoUrl;
+				customSkin.bubbleLogoUrl = bubbleLogoUrl;
+				customSkin.footerMessage = footerMessage;
+				customSkin.footerHeight = footerHeight;				
+			}
+			var customSkinBytes:ByteArray = new ByteArray();
+			customSkinBytes.writeObject( customSkin );
+			EncryptedLocalStore.setItem("com.danieldura.twittercamp.config.customSkin",customSkinBytes);
+			
+			var searchTermBytes:ByteArray = new ByteArray();
+			searchTermBytes.writeUTF( searchTerms );
+			EncryptedLocalStore.setItem("com.danieldura.twittercamp.config.searchTerms", searchTermBytes );
+
+			var useCustomBytes:ByteArray = new ByteArray();
+			useCustomBytes.writeBoolean( useCustomSkin );
+			EncryptedLocalStore.setItem("com.danieldura.twittercamp.config.useCustomSkin", useCustomBytes );	
+		}
+		
+		public function retrieveModel():void
+		{
+			var useCustomBytes:ByteArray = EncryptedLocalStore.getItem("com.danieldura.twittercamp.config.useCustomSkin");
+			if( useCustomBytes )
+				useCustomSkin = useCustomBytes.readBoolean();
+
+			var searchTermBytes:ByteArray = EncryptedLocalStore.getItem("com.danieldura.twittercamp.config.searchTerms");
+			if( searchTermBytes )
+				searchTerms = searchTermBytes.readUTF();
+			
+			var configBytes:ByteArray = EncryptedLocalStore.getItem("com.danieldura.twittercamp.config.customSkin");
+			if( configBytes )
+			{
+				var config:Object = configBytes.readObject();
+				customSkin.backgroundLogoUrl = config.backgroundLogoUrl;
+				customSkin.backgroundColor = config.backgroundColor;
+				customSkin.backgroundImageUrl = config.backgroundImageUrl;
+				customSkin.footerLogoUrl = config.footerLogoUrl;
+				customSkin.bubbleLogoUrl = config.bubbleLogoUrl;
+				customSkin.footerMessage = config.footerMessage;
+				customSkin.footerHeight = config.footerHeight;
+			}
+		}
+		
+		public function resetModel():void
+		{
+				EncryptedLocalStore.removeItem("com.danieldura.twittercamp.config.useCustomSkin");
+				EncryptedLocalStore.removeItem("com.danieldura.twittercamp.config.searchTerms");
+				EncryptedLocalStore.removeItem("com.danieldura.twittercamp.config.customSkin");			
 		}
 	}
 }

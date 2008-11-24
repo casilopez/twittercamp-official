@@ -21,9 +21,10 @@ THE SOFTWARE.
 */		
 package com.adobe.services.twitter
 {
-	import com.adobe.utils.DateUtil;
-	import flash.events.EventDispatcher;
 	import com.adobe.services.twitter.utils.DateUtils;
+	import com.adobe.utils.DateUtil;
+	
+	import flash.events.EventDispatcher;
 	
 	[Bindable]
 	public class TwitterStatus extends EventDispatcher
@@ -45,6 +46,19 @@ package com.adobe.services.twitter
 			}
 			
 			createdAt = parseDate( data.created_at );
+		}
+		
+		private namespace atom = "http://www.w3.org/2005/Atom";
+		public function parseAtomData( data:XML ):void
+		{
+			use namespace atom;
+			id = data.id;
+			text = data.title;
+			createdAt = DateUtil.parseW3CDTF( data.published );			
+			
+			user = new TwitterUser();
+			user.name = data.author.name;
+			user.profileImageUrl = data.link.(@type=="image/png").@href;
 		}
 		
 		public function get relativeCreatedAt():String
