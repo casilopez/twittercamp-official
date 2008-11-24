@@ -74,7 +74,7 @@
 	<mx:HRule width="100%" />
 	<mx:Label y="10" text="How would you like to skin TwitterCamp?" width="100%"/>
 	<mx:RadioButton id="defaultRadioButton" groupName="customSkinGroup" value="default" label="Use the default skins." change="if( defaultRadioButton.selected ) selectDefaultSkin()"  selected="true"/>
-	<mx:RadioButton id="customRadioButton" groupName="customSkinGroup" value="custom" label="Use the following images:" change="if( customRadioButton.selected ) selectCustomSkin()" selected="{model.useCustomSkin}" />
+	<mx:RadioButton id="customRadioButton" groupName="customSkinGroup" value="custom" label="Use the following settings:" change="if( customRadioButton.selected ) selectCustomSkin()" selected="{model.useCustomSkin}" />
 	<mx:Form width="100%" paddingLeft="0" paddingBottom="0" paddingRight="0" paddingTop="0" enabled="{customRadioButton.selected}">
 		<mx:FormItem label="Background Color" horizontalCenter="0" direction="horizontal">
 			<mx:TextInput id="backgroundColorText" click="backgroundColorPicker.open()" text="{model.backgroundColor}" enabled="false" width="75"/>
