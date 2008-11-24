@@ -1,78 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
-<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" styleName="panelCanvas"
-		   horizontalScrollPolicy="off" verticalScrollPolicy="off">
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" styleName="panelCanvas"
+		   horizontalScrollPolicy="off" verticalScrollPolicy="off"
+		   paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10"> 
 	<mx:Script>
 		<![CDATA[
 			import flash.filesystem.File;
 			import com.adobe.twittercamp.models.TwitterCampModel;
 			
-			private function apply():void
-			{
-				var model:TwitterCampModel = TwitterCampModel.getInstance();
-				model.backgroundColor = backgroundColorPicker.selectedColor;
-				model.backgroundImageUrl = backgroundImageUrl.text;
-				model.footerMessage = footerMessageText.text;
-				model.footerHeight = footerHeightStepper.value;
-			}
+			[Bindable]
+			private var model:TwitterCampModel = TwitterCampModel.getInstance();
 			
-			private var backgroundImageFile:File;
-			
-			private function selectBackgroundImage():void
+			private function selectCustomSkin():void
 			{
-				backgroundImageFile = new File();
-				backgroundImageFile.browse();
- 				backgroundImageFile.addEventListener( Event.SELECT, function( event:Event ):void
-				{
-					backgroundImageFile.cancel();
-					backgroundImageUrl.text = backgroundImageFile.url;
-				} );
+				model.useCustomSkin = true;
+				model.setCustomSkin();
+				model.flushModel();
 			}
 			
 			private function selectDefaultSkin():void
 			{
-				trace("selecting default profile");
-				TwitterCampModel.getInstance().resetSkins();
+				model.useCustomSkin = false;
+				model.setDefaultSkin();
+				model.flushModel();
 			}
 			
-			private function selectCustomSkin():void
+			private function flush():void
 			{
-				apply();
+				model.searchTerms = searchTermsInput.text;
+				model.backgroundColor = backgroundColorPicker.selectedColor;
+				model.backgroundLogoUrl = backgroundLogoUrl.text;
+				model.footerLogoUrl = footerLogoUrl.text;
+				model.bubbleLogoUrl = bubbleLogoUrl.text;
+				model.backgroundImageUrl = backgroundImageUrl.text;
+				model.footerMessage = footerMessageText.text;
+				model.footerHeight = footerHeightStepper.value;
+				model.useCustomSkin = customRadioButton.selected;
+				model.flushModel();
 			}
+			
+			private function save():void
+			{
+				flush();
+				visible = false;
+				dispatchEvent( new Event("save") );
+			}
+			
+			private function selectImage( field:TextInput ):void
+			{
+				var file:File = new File();
+				file.browse();
+ 				file.addEventListener( Event.SELECT, function( event:Event ):void
+				{
+					field.text = file.url;
+					flush();
+				} );
+			}
+
 		]]>
-	</mx:Script>		   
-	<mx:Label y="10" text="How would you like to skin TwitterCamp?" left="10" right="10"/>
-	<mx:RadioButton id="defaultRadioButton" value="default" x="10" y="35" label="Use the default skins." change="if( defaultRadioButton.selected ) selectDefaultSkin()"  selected="true"/>
-	<mx:RadioButton id="customRadioButton" value="custom" x="10" y="55" label="Use the following images:" change="if( customRadioButton.selected ) selectCustomSkin()" />
-	<mx:Form y="81" width="{width - 20}" x="10" paddingLeft="0" paddingBottom="0" paddingRight="0" paddingTop="0" enabled="{customRadioButton.selected}">
-		
+	</mx:Script>
+	<mx:Metadata>
+		[Event("save")]
+	</mx:Metadata>
+	<mx:Form width="100%" paddingTop="0" paddingLeft="0" paddingRight="0" paddingBottom="0">
+		<mx:FormItem label="Search Terms:">
+			<mx:TextInput id="searchTermsInput" text="@onairbustour OR from:onairbustour"/>
+		</mx:FormItem>
+		<mx:TextArea selectable="false" focusEnabled="false" borderStyle="none" backgroundAlpha="0" horizontalScrollPolicy="off" verticalScrollPolicy="off" width="100%">
+			<mx:htmlText>
+				<![CDATA[This application uses Twitter Search for data. For infomation on how to format your search terms, please visit <u><a href="http://search.twitter.com/operators">Twitter search operators page</></u>.]]>
+			</mx:htmlText>
+		</mx:TextArea>
+	</mx:Form>	
+	<mx:HRule width="100%" />
+	<mx:Label y="10" text="How would you like to skin TwitterCamp?" width="100%"/>
+	<mx:RadioButton id="defaultRadioButton" groupName="customSkinGroup" value="default" label="Use the default skins." change="if( defaultRadioButton.selected ) selectDefaultSkin()"  selected="true"/>
+	<mx:RadioButton id="customRadioButton" groupName="customSkinGroup" value="custom" label="Use the following images:" change="if( customRadioButton.selected ) selectCustomSkin()" selected="{model.useCustomSkin}" />
+	<mx:Form width="100%" paddingLeft="0" paddingBottom="0" paddingRight="0" paddingTop="0" enabled="{customRadioButton.selected}">
 		<mx:FormItem label="Background Color" horizontalCenter="0" direction="horizontal">
-			<mx:TextInput id="backgroundColorText" click="backgroundColorPicker.open()" text="{backgroundColorPicker.selectedColor.toString(16)}" enabled="false" width="75"/>
+			<mx:TextInput id="backgroundColorText" click="backgroundColorPicker.open()" text="{model.backgroundColor}" enabled="false" width="75"/>
 			<mx:ColorPicker id="backgroundColorPicker" />
 		</mx:FormItem>
 		<mx:FormItem label="Background Image" direction="horizontal">
-			<mx:TextInput id="backgroundImageUrl" width="160" />
-			<mx:Button label="Browse" click="selectBackgroundImage()"/>
+			<mx:TextInput id="backgroundImageUrl" width="160" text="{model.backgroundImageUrl}" />
+			<mx:Button label="Browse" click="selectImage(backgroundImageUrl)"/>
 		</mx:FormItem>
 		<mx:FormItem label="Background Logo" direction="horizontal">
-			<mx:TextInput id="backgroundLogoUrl" width="160"/>
-			<mx:Button label="Browse"/>
+			<mx:TextInput id="backgroundLogoUrl" text="{model.backgroundLogoUrl}" width="160"/>
+			<mx:Button label="Browse" click="selectImage(backgroundLogoUrl)"/>
 		</mx:FormItem>
 		<mx:FormItem label="Footer Logo" direction="horizontal">
-			<mx:TextInput id="footerLogoUrl"  width="160"/>
-			<mx:Button label="Browse"/>
+			<mx:TextInput id="footerLogoUrl" text="{model.footerLogoUrl}"  width="160"/>
+			<mx:Button label="Browse" click="selectImage(footerLogoUrl)"/>
 		</mx:FormItem>
 		<mx:FormItem label="Bubble Logo" direction="horizontal">
-			<mx:TextInput id="bubbleLogoUrl"  width="160"/>
-			<mx:Button label="Browse"/>
+			<mx:TextInput id="bubbleLogoUrl" text="{model.bubbleLogoUrl}"  width="160"/>
+			<mx:Button label="Browse" click="selectImage(bubbleLogoUrl)"/>
 		</mx:FormItem>
-		<mx:FormItem label="Foote Height">
-			<mx:NumericStepper id="footerHeightStepper" minimum="0" maximum="10000" stepSize="1" change="TwitterCampModel.getInstance().footerHeight = footerHeightStepper.value" />
+		<mx:FormItem label="Footer Height">
+			<mx:NumericStepper id="footerHeightStepper" value="{model.footerHeight}" minimum="0" maximum="10000" stepSize="1" change="model.footerHeight = footerHeightStepper.value" />
 		</mx:FormItem>
-		<mx:FormItem label="Footer Message" direction="horizontal">
-			<mx:TextArea id="footerMessageText" width="160" change="TwitterCampModel.getInstance().footerMessage = footerMessageText.text" />
+		<mx:FormItem label="Footer Message" direction="horizontal" width="100%">
+			<mx:TextArea id="footerMessageText" text="{model.footerMessage}" width="100%" change="model.footerMessage = footerMessageText.text" />
 		</mx:FormItem>
 	</mx:Form>
-	<mx:Button label="Close" right="10" bottom="10" click="visible = false"/>
-	<mx:Button label="Apply" right="71" bottom="10" click="apply()"/>
+	<mx:Box horizontalAlign="right" width="100%">
+		<mx:Button label="Save" click="save()"/>
+	</mx:Box>
 	
-</mx:Canvas>
+</mx:VBox>
