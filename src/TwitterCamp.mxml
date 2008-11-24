@@ -2,7 +2,7 @@
 <mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml"
 					  xmlns:business="com.adobe.twittercamp.business.*"
 					  layout="absolute"
-					  creationComplete="handle_creationComplete(event)"
+					  applicationComplete="handle_creationComplete(event)"
 					  xmlns:views="com.adobe.twittercamp.views.*"
 					  backgroundColor="#FFFFFF"
 					  backgroundImage=""
@@ -33,6 +33,8 @@
 	
 	<mx:Script>
 		<![CDATA[
+			import mx.controls.FlexNativeMenu;
+			import com.adobe.services.twitter.TwitterSearchQueue;
 			import com.adobe.services.twitter.TwitterFriendsTimeline;
 			import com.adobe.twittercamp.utils.Random;
 			import com.adobe.twittercamp.assets.flash.FlashAssets;
@@ -46,25 +48,30 @@
 			import com.adobe.services.twitter.requests.TwitterFriendsTimelineRequest;
 			import com.adobe.services.twitter.TwitterCommandLoader;
 			import com.adobe.services.twitter.Twitter;
-			
-			// This setting makes it so that only tweets that are directed at the user
-			// who signed in show up. For example, if I signed in as 'ddura', then only
-			// tweets that have @ddura will appear in the app.
-			private static var onlyShowDirectedTweets:Boolean = false;
-			
-			private var twitter:Twitter;
-			private var userTimeline:TwitterFriendsTimeline;
-			
+
+			private var searchQueue:TwitterSearchQueue;			
+			private var model:TwitterCampModel = TwitterCampModel.getInstance();
+						
 			private function handle_creationComplete( event:FlexEvent ):void
 			{
+				//model.resetModel();
+				
 				systemManager.stage.stageWidth = 1365;
 				systemManager.stage.stageHeight = 768;
 				systemManager.stage.nativeWindow.x = 10;
 				systemManager.stage.nativeWindow.y = 10;
-				
-				twitter = TwitterCampModel.getInstance().twitter;
+				systemManager.stage.displayState = StageDisplayState.FULL_SCREEN_INTERACTIVE;
 				
 				initializeKeyListeners();
+				
+				var nativeMenu:NativeMenu = new NativeMenu();
+				var menuItem:NativeMenuItem = nativeMenu.addItem( new NativeMenuItem() );
+				menuItem.label = "Configure TwitterCamp";
+				menuItem.addEventListener(Event.SELECT, function( event:Event ):void
+				{
+					configurationPanel.visible = true;
+				} );
+				this.contextMenu = nativeMenu;
 			}
 			
 			private function initializeKeyListeners():void
@@ -75,35 +82,28 @@
 			private function handle_keyDown( event:KeyboardEvent ):void
 			{
 				if( ( event.charCode == String("`").charCodeAt() && event.ctrlKey ) ||
-					event.charCode == String("C").charCodeAt() )
+					 event.charCode == String("C").charCodeAt() ||
+					 event.charCode == String("c").charCodeAt() )
 					configurationPanel.visible = true;
 			}
 			
-			private function login():void
+
+			private function saveConfiguration():void
 			{
-//				TwitterCampModel.getInstance().timelineUsername = loginView.timelineUsername;
-				TwitterCampModel.getInstance().twitter.login( loginView.username, loginView.password );				
-				
-				var timelineUsername:String = TwitterCampModel.getInstance().timelineUsername;
-				userTimeline = ( timelineUsername ) ? new TwitterFriendsTimeline( twitter, timelineUsername ) : twitter.friendsTimeline;
-				userTimeline.autoUpdateInterval = 1800000;
-				userTimeline.autoUpdate = true;
-				userTimeline.addEventListener( StatusUpdateEvent.FRIEND_STATUS_UPDATE, handle_statusUpdate );
+				if( (searchQueue && searchQueue.searchTerms != model.searchTerms) || searchQueue == null )
+				{
+					searchQueue = new TwitterSearchQueue(model.searchTerms);
+					searchQueue.autoUpdateInterval = 45000;
+					searchQueue.autoUpdate = true;
+					searchQueue.addEventListener( StatusUpdateEvent.FRIEND_STATUS_UPDATE, handle_statusUpdate );
+				}				
 			}
-			
+
 			private function handle_statusUpdate( event:StatusUpdateEvent ):void
 			{
-				if( !onlyShowDirectedTweets || 
-					event.status.user.screenName.toLowerCase() == twitter.username.toLowerCase() ||
-					event.status.text.toLowerCase().indexOf( "@" + twitter.username.toLowerCase() ) >= 0 )
-					addStatusToQueue( event.status );
+					bubbleGrid.addStatus( event.status );
 			}
-			
-			private function addStatusToQueue( status:TwitterStatus ):void
-			{
-				bubbleGrid.addStatus( status );
-			}
-			
+
 			public function toggleFullScreen():void
 			{
 				systemManager.stage.displayState = ( systemManager.stage.displayState == StageDisplayState.FULL_SCREEN ) ? 
@@ -117,12 +117,11 @@
 		<mx:SWFLoader source="{TwitterCampModel.getInstance().backgroundImageUrl}" doubleClickEnabled="true"  left="0" right="0" top="0" bottom="0" scaleContent="true" maintainAspectRatio="false"/>
 		<mx:SWFLoader source="{TwitterCampModel.getInstance().backgroundLogoUrl}" verticalCenter="0" horizontalCenter="0" alpha="0.2" />
 		<views:BubbleGrid id="bubbleGrid" left="0" right="0" top="0" bottom="0"/>
-		<views:Login id="loginView" visible="{!TwitterCampModel.getInstance().twitter.connected}" login="login()" verticalCenter="0" horizontalCenter="0" height="150" />
-		<views:Configuration id="configurationPanel" width="400" height="400" visible="false" verticalCenter="0" horizontalCenter="0" />
+		<views:Configuration id="configurationPanel" save="saveConfiguration()" visible="true" width="400" verticalCenter="0" horizontalCenter="0" />
 	</mx:Canvas>
 	<mx:Canvas height="{TwitterCampModel.getInstance().footerHeight}" bottom="0" left="0" right="0">
 		<mx:Image source="{TwitterCampModel.getInstance().footerLogoUrl}" doubleClickEnabled="true" doubleClick="toggleFullScreen()" verticalCenter="-10" right="20"/>
 		<mx:Text x="20" y="10" verticalCenter="-10" width="551" fontSize="22" text="{TwitterCampModel.getInstance().footerMessage}" />
-		<mx:Label text="TwitterCamp Developed by Daniel Dura - http://www.danieldura.com/twittercamp/" color="#666666"  horizontalCenter="0" bottom="5"/>
+		<mx:Label text="Powered by TwitterCamp - A Project by Daniel Dura - http://www.danieldura.com/twittercamp/" color="#666666"  horizontalCenter="0" bottom="5"/>
 	</mx:Canvas>
 </mx:WindowedApplication>
